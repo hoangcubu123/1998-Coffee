@@ -156,4 +156,3 @@ with tab3:
     if st.button("🗑️ RESET DOANH THU (CẨN THẬN)"):
         reset_revenue()
         st.rerun()
-        st.rerun()
