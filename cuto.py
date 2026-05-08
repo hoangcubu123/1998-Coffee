@@ -5,44 +5,56 @@ from datetime import datetime
 # --- 1. CẤU HÌNH GIAO DIỆN ---
 st.set_page_config(page_title="1998 COFFEE - POS", page_icon="☕", layout="centered")
 
-# --- 2. CSS TỔNG LỰC (Sửa lỗi chữ mờ & Làm đẹp giao diện) ---
+# --- 2. CSS "SIÊU CẤP" CHỈNH MÀU CHO NỀN TỐI ---
 st.markdown("""
     <style>
-    /* Ép chữ đen đậm cho toàn bộ nhãn (Label) để nhìn rõ trên mọi chế độ */
-    .stSelectbox label, .stRadio label, .stMultiSelect label, p, .stTabs [data-baseweb="tab"] {
-        color: #000000 !important;
-        font-weight: 700 !important;
-        font-size: 1rem !important;
+    /* Ép màu chữ tiêu đề (Label) thành màu trắng sáng cho dễ đọc */
+    .stSelectbox label, .stRadio label, .stMultiSelect label, p {
+        color: #FFFFFF !important;
+        font-weight: 600 !important;
+        font-size: 1.1rem !important;
+        text-shadow: 1px 1px 2px #000; /* Thêm bóng cho chữ nổi lên */
     }
     
-    /* Chỉnh màu chữ trong ô chọn Selectbox */
-    div[data-baseweb="select"] > div { color: black !important; font-weight: 600; }
+    /* Chỉnh màu cho các mục đã chọn bên trong ô (Selectbox/Multiselect) */
+    div[data-baseweb="select"] > div {
+        color: #000000 !important; /* Chữ trong ô chọn để màu đen cho dễ nhìn trên nền trắng của ô */
+        font-weight: 500;
+    }
 
-    /* Nút bấm màu nâu cafe chuyên nghiệp */
+    /* Nút bấm màu Vàng Gold cho sang chảnh trên nền đen */
     div.stButton > button {
-        width: 100%; border-radius: 12px; height: 3.5em;
-        background-color: #6F4E37; color: white !important; font-weight: bold;
-        border: none; box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        width: 100%; border-radius: 12px; height: 3.8em;
+        background-color: #D4AF37; /* Màu Gold */
+        color: #000000 !important; /* Chữ đen trên nền vàng cho nổi */
+        font-weight: bold;
+        border: 2px solid #FFFFFF;
+        transition: 0.3s;
+    }
+    div.stButton > button:hover {
+        background-color: #FFD700;
+        border: 2px solid #D4AF37;
+    }
+
+    /* Tab menu: Sửa màu chữ Tab để không bị mờ */
+    .stTabs [data-baseweb="tab"] p {
+        color: #BBBBBB !important; /* Chữ tab chưa chọn màu xám nhẹ */
+    }
+    .stTabs [aria-selected="true"] p {
+        color: #FFFFFF !important; /* Chữ tab đang chọn màu trắng */
+        font-size: 1.2rem !important;
     }
 
     /* Hộp hiển thị Tổng tiền (Metric) */
     div[data-testid="stMetric"] {
-        background-color: #ffffff; border: 2px solid #6F4E37;
-        padding: 15px; border-radius: 15px; text-align: center;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        background-color: #1E1E1E; /* Nền hộp đen xám */
+        border: 2px solid #D4AF37;
+        padding: 20px;
+        border-radius: 15px;
+        text-align: center;
     }
-    div[data-testid="stMetricLabel"] > div { color: #000000 !important; font-size: 1.1rem !important; }
-    div[data-testid="stMetricValue"] > div { color: #d32f2f !important; font-weight: 800 !important; }
-
-    /* Chỉnh tab rõ ràng, dễ bấm trên điện thoại */
-    .stTabs [data-baseweb="tab-list"] { gap: 10px; }
-    .stTabs [data-baseweb="tab"] { 
-        background-color: #f0f0f0; border-radius: 8px 8px 0 0; 
-        padding: 10px 20px;
-    }
-    .stTabs [aria-selected="true"] { 
-        background-color: #6F4E37 !important; color: white !important; 
-    }
+    div[data-testid="stMetricLabel"] > div { color: #FFFFFF !important; }
+    div[data-testid="stMetricValue"] > div { color: #D4AF37 !important; font-weight: 800 !important; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -63,10 +75,9 @@ def save_revenue(amount):
 def reset_revenue():
     if os.path.exists(DB_FILE): os.remove(DB_FILE)
 
-# --- 4. GIỎ HÀNG & DỮ LIỆU ---
+# --- 4. KHỞI TẠO & DỮ LIỆU ---
 if 'cart' not in st.session_state: st.session_state.cart = []
 
-# Menu cập nhật chuẩn tại quầy
 menu = {
     "CÀ PHÊ MÁY": {
         "Cà phê đen": {"M": 17000, "L": 24000},
@@ -75,13 +86,13 @@ menu = {
         "Bạc xỉu": {"M": 22000, "L": 27000},
         "Cà phê sữa tươi": {"M": 22000, "L": 27000},
         "Cà phê sữa gấu": {"M": None, "L": 33000},
+        "Cà phê mix": {"M": 25000, "L": 30000},
         "Cà phê sữa dừa sương sáo": {"M": 29000, "L": 35000},
     },
     "MATCHA/CACAO/MÔN": {
         "Matcha latte": {"M": 22000, "L": 29000},
         "Matcha kem muối": {"M": 27000, "L": 32000},
         "Cacao latte": {"M": 20000, "L": 25000},
-        "Cacao muối": {"M": 25000, "L": 30000},
         "Môn latte": {"M": 20000, "L": 25000},
         "Môn muối": {"M": 25000, "L": 30000},
     }
@@ -90,53 +101,59 @@ tops = {"Thêm matcha": 5000, "Kem Muối": 5000, "Sương Sáo": 5000}
 
 # --- 5. GIAO DIỆN CHÍNH ---
 st.title("☕ 1998 COFFEE")
+st.markdown("📍 *145 Bà Huyện Thanh Quan, Q3*")
+
 tab1, tab2, tab3 = st.tabs(["⚡ LÊN ĐƠN", "📋 GIỎ HÀNG", "📈 DOANH THU"])
 
 with tab1:
-    c = st.selectbox("Chọn nhóm:", list(menu.keys()))
-    m = st.selectbox("Chọn món:", list(menu[c].keys()))
-    szs = [s for s in ["M", "L"] if menu[c][m][s] is not None]
-    sz = st.radio("Chọn Size:", szs, horizontal=True)
-    t = st.multiselect("Thêm Topping:", list(tops.keys()))
+    st.markdown("### 🛠 Tùy chọn món")
+    cat = st.selectbox("Chọn nhóm đồ uống:", list(menu.keys()))
+    m = st.selectbox("Tên món:", list(menu[cat].keys()))
     
-    # Tính giá tạm thời
-    p = menu[c][m][sz] + (len(t) * 5000)
-    st.markdown(f"### Tạm tính: :red[{p:,}đ]")
+    szs = [s for s in ["M", "L"] if menu[cat][m][s] is not None]
+    sz = st.radio("Kích cỡ (Size):", szs, horizontal=True)
     
-    if st.button("🛒 THÊM VÀO GIỎ"):
+    t = st.multiselect("Thêm Topping đi ông:", list(tops.keys()))
+    
+    p = menu[cat][m][sz] + (len(t) * 5000)
+    st.markdown(f"## Tạm tính: <span style='color:#D4AF37'>{p:,}đ</span>", unsafe_allow_html=True)
+    
+    if st.button("🛒 THÊM VÀO ĐƠN HÀNG"):
         st.session_state.cart.append({"name": f"{m} ({sz})", "price": p})
-        st.toast(f"Đã thêm {m}!")
+        st.toast(f"Đã thêm {m} vào giỏ!")
 
 with tab2:
     if st.session_state.cart:
         total_bill = 0
-        st.write("**Chi tiết đơn hàng:**")
+        st.markdown("### 📝 Danh sách món đang chọn:")
         for i, it in enumerate(st.session_state.cart):
-            st.write(f"{i+1}. {it['name']} - **{it['price']:,}đ**")
+            st.write(f"{i+1}. **{it['name']}** - `{it['price']:,}đ`")
             total_bill += it['price']
+        
         st.divider()
         st.metric("TỔNG TIỀN ĐƠN NÀY", f"{total_bill:,} VNĐ")
         
-        if st.button("✅ CHỐT ĐƠN & THANH TOÁN"):
-            save_revenue(total_bill) # Lưu vĩnh viễn vào file
-            st.session_state.cart = []
-            st.success("Đã thanh toán và lưu doanh thu!")
-            st.balloons()
-            st.rerun()
-            
-        if st.button("❌ HỦY TOÀN BỘ ĐƠN"):
-            st.session_state.cart = []
-            st.rerun()
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("✅ CHỐT & THANH TOÁN"):
+                save_revenue(total_bill)
+                st.session_state.cart = []
+                st.success("Đã ghi nhận doanh thu!")
+                st.rerun()
+        with col2:
+            if st.button("❌ XÓA ĐƠN"):
+                st.session_state.cart = []
+                st.rerun()
     else:
-        st.info("Giỏ hàng đang trống ông ơi!")
+        st.info("Chưa có món nào trong đơn hàng ông ơi! Qua tab Lên đơn đi.")
 
 with tab3:
-    st.subheader("Báo cáo doanh thu vĩnh viễn")
+    st.subheader("📊 Báo cáo doanh thu tích lũy")
     r = get_revenue()
-    st.metric("TỔNG DOANH THU", f"{r:,} VNĐ")
-    st.caption("Dữ liệu này được lưu vĩnh viễn vào file revenue_data.txt")
+    st.metric("TỔNG TIỀN ĐÃ BÁN", f"{r:,} VNĐ")
     
     st.write("---")
-    if st.button("🗑️ RESET DOANH THU (SANG NGÀY MỚI)"):
+    if st.button("🗑️ RESET DOANH THU (CẨN THẬN)"):
         reset_revenue()
+        st.rerun()
         st.rerun()
