@@ -1,33 +1,67 @@
 import streamlit as st
 
-# 1. Cấu hình giao diện (Dark mode & Layout gọn)
+# 1. CẤU HÌNH GIAO DIỆN
 st.set_page_config(
     page_title="1998 COFFEE - POS", 
     page_icon="☕",
     layout="centered"
 )
 
-# Thêm CSS để giao diện trên điện thoại đẹp hơn
+# 2. PHẦN CSS ĐỂ CHỈNH MÀU CHỮ (Sửa lỗi mờ chữ trên Dark Mode)
 st.markdown("""
     <style>
+    /* Nền chính của App */
     .main { background-color: #f5f5f5; }
-    .stButton>button {
+    
+    /* Nút bấm màu nâu cafe, chữ trắng */
+    div.stButton > button {
         width: 100%;
         border-radius: 10px;
-        height: 3em;
+        height: 3.5em;
         background-color: #6F4E37;
-        color: white;
+        color: white !important;
+        font-weight: bold;
+        border: none;
     }
-    .stMetric {
-        background-color: white;
+    
+    /* Hộp hiển thị Tổng tiền */
+    div[data-testid="stMetric"] {
+        background-color: #ffffff;
+        border: 2px solid #6F4E37;
         padding: 15px;
-        border-radius: 10px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        border-radius: 15px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    
+    /* Ép màu chữ Label (TỔNG CỘNG) thành đen */
+    div[data-testid="stMetricLabel"] > div {
+        color: #000000 !important;
+        font-size: 1.1rem !important;
+        font-weight: bold !important;
+        text-align: center;
+    }
+    
+    /* Ép màu con số tiền thành đỏ đậm cho nổi */
+    div[data-testid="stMetricValue"] > div {
+        color: #d32f2f !important;
+        text-align: center;
+        font-weight: 800 !important;
+    }
+
+    /* Chỉnh màu các tab cho rõ */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 10px;
+    }
+    .stTabs [data-baseweb="tab"] {
+        height: 50px;
+        background-color: #eeeeee;
+        border-radius: 10px 10px 0px 0px;
+        padding: 10px;
     }
     </style>
     """, unsafe_allow_html=True)
 
-# Dữ liệu Menu (Giữ nguyên từ bản trước của ông)
+# 3. DỮ LIỆU MENU (Đã cập nhật theo ảnh menu tại quầy)
 menu_data = {
     "CÀ PHÊ MÁY": {
         "Cà phê đen": {"M": 17000, "L": 24000},
@@ -51,56 +85,65 @@ menu_data = {
     "CACAO NGUYÊN CHẤT": {
         "Cacao latte": {"M": 20000, "L": 25000},
         "Cacao muối": {"M": 25000, "L": 30000},
+        "Cacao sữa oatside": {"M": 25000, "L": 30000},
         "Cacao sữa gấu": {"M": None, "L": 33000},
     },
     "KHOAI MÔN": {
         "Môn latte": {"M": 20000, "L": 25000},
         "Môn muối": {"M": 25000, "L": 30000},
+        "Môn sữa oatside": {"M": 25000, "L": 30000},
         "Môn sữa gấu": {"M": None, "L": 33000},
     }
 }
 
 topping_data = {"Thêm matcha": 5000, "Kem Muối": 5000, "Sương Sáo": 5000}
 
-# --- GIAO DIỆN CHÍNH ---
+# 4. GIAO DIỆN CHÍNH
 st.title("☕ 1998 COFFEE")
-st.write("📍 145 Bà Huyện Thanh Quan, Q3")
+st.markdown("📍 *145 Bà Huyện Thanh Quan, Q3*")
 
-# Dùng Tabs cho đỡ rối màn hình điện thoại
-tab1, tab2 = st.tabs(["⚡ Lên đơn", "📋 Giỏ hàng"])
+tab1, tab2 = st.tabs(["⚡ LÊN ĐƠN", "📋 GIỎ HÀNG"])
 
 with tab1:
-    cat_choice = st.selectbox("Chọn nhóm:", list(menu_data.keys()))
-    item_choice = st.selectbox("Chọn món:", list(menu_data[cat_choice].keys()))
+    cat_choice = st.selectbox("Nhóm đồ uống:", list(menu_data.keys()))
+    item_choice = st.selectbox("Tên món:", list(menu_data[cat_choice].keys()))
     
-    # Kiểm tra Size
-    sizes = [s for s in ["M", "L"] if menu_data[cat_choice][item_choice][s] is not None]
-    size_choice = st.radio("Chọn Size:", sizes, horizontal=True)
+    # Lọc size khả dụng
+    available_sizes = [s for s in ["M", "L"] if menu_data[cat_choice][item_choice][s] is not None]
+    size_choice = st.radio("Chọn Size:", available_sizes, horizontal=True)
     
-    selected_toppings = st.multiselect("Topping (+5k):", list(topping_data.keys()))
+    selected_toppings = st.multiselect("Topping (5k):", list(topping_data.keys()))
     
-    # Tính tiền món hiện tại
-    price = menu_data[cat_choice][item_choice][size_choice] + len(selected_toppings)*5000
+    # Tính giá
+    base_p = menu_data[cat_choice][item_choice][size_choice]
+    top_p = len(selected_toppings) * 5000
+    total_p = base_p + top_p
     
-    st.subheader(f"Giá: {price:,} VNĐ")
+    st.markdown(f"### Tạm tính: {total_p:,} VNĐ")
     
-    if st.button("🛒 THÊM VÀO ĐƠN"):
-        if 'cart' not in st.session_state: st.session_state.cart = []
-        st.session_state.cart.append({"name": f"{item_choice} ({size_choice})", "price": price})
-        st.toast(f"Đã thêm {item_choice}!")
+    if st.button("🛒 XÁC NHẬN THÊM"):
+        if 'cart' not in st.session_state:
+            st.session_state.cart = []
+        
+        st.session_state.cart.append({
+            "name": f"{item_choice} ({size_choice})",
+            "price": total_p
+        })
+        st.toast(f"Đã thêm {item_choice} vào đơn!")
 
 with tab2:
     if 'cart' in st.session_state and st.session_state.cart:
-        total = 0
+        grand_total = 0
         for i, item in enumerate(st.session_state.cart):
             st.write(f"{i+1}. {item['name']} - **{item['price']:,}đ**")
-            total += item['price']
+            grand_total += item['price']
         
         st.divider()
-        st.metric("TỔNG CỘNG", f"{total:,} VNĐ")
+        # Phần Metric đã được CSS ép màu đen và đỏ ở trên
+        st.metric(label="TỔNG CỘNG", value=f"{grand_total:,} VNĐ")
         
-        if st.button("❌ XÓA HẾT"):
+        if st.button("❌ XÓA HẾT ĐƠN"):
             st.session_state.cart = []
             st.rerun()
     else:
-        st.write("Giỏ hàng đang trống ông ơi!")
+        st.info("Chưa có món nào trong đơn hàng ông ơi!")
